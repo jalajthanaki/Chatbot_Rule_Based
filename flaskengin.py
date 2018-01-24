@@ -91,12 +91,12 @@ def hello_world():
 def welcomemsg_chat():
     welcome_msg = cs.loan_assistant_welcome_msg()
     conversation_list_history.append(welcome_msg)
-    # db_handler = mongo.db.chathistory
-    # db_handler.insert({"request_user_id": request_user_id, "conversation": conversation_list_history,
-    #                    "time": now_india.strftime(fmt)})
-    # db_handler.update({"request_user_id": request_user_id}, {
-    #     '$set': {"request_user_id": request_user_id, "conversation": conversation_list_history, "time": now_india.strftime(fmt)},
-    #     "$currentDate": {"lastModified": True}}, upsert=True)
+    db_handler = mongo.db.chathistory
+    db_handler.insert({"request_user_id": request_user_id, "conversation": conversation_list_history,
+                       "time": now_india.strftime(fmt)})
+    db_handler.update({"request_user_id": request_user_id}, {
+        '$set': {"request_user_id": request_user_id, "conversation": conversation_list_history, "time": now_india.strftime(fmt)},
+        "$currentDate": {"lastModified": True}}, upsert=True)
     resp = Response(welcome_msg, status=200, mimetype='application/json')
     return resp
 
@@ -198,6 +198,21 @@ def loan_ammount_asking_coversation():
         resp = Response(loan_conv_msg, status=200, mimetype='application/json')
         return resp
 
+@app.route('/other_chat', methods=['GET', 'POST'])
+def other_chat():
+    if ('msg' in request.args):
+        otherquery = request.args['msg']
+        loan_conv_msg = cs.other_cases(otherquery)
+        conversation_list_history.append(loan_conv_msg)
+        # db_handler = mongo.db.chathistory
+        # db_handler.insert({"request_user_id": request_user_id, "conversation": conversation_list_history,
+        #                    "time": now_india.strftime(fmt)})
+        # db_handler.update({"request_user_id": request_user_id}, {
+        #     '$set': {"request_user_id": request_user_id, "conversation": conversation_list_history, "time": now_india.strftime(fmt)},
+        #     "$currentDate": {"lastModified": True}}, upsert=True)
+        print post_data_lead_create
+        resp = Response(loan_conv_msg, status=200, mimetype='application/json')
+        return resp
 
 @app.route('/end_chat', methods=['GET', 'POST'])
 def user_bye_str():

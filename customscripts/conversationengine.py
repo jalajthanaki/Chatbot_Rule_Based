@@ -1,19 +1,17 @@
-import random
 import json
 import sys, time, re
 from bson import json_util
 from num2words import num2words
-import requests, ast
+
+# Error set
+defualt_missing_data_error = [
+    "Please say hi to me", "I guess you have not entered anything...! "]
+defualt_error = ["I can't do that for you.", "To keep going say hi to me."," You can also call to our customer-executive on 022-1111111"]
 
 # Welcome msg
 assistant_defualt_welcome_msg = [
     "Hi, I'm personal loan application assistant.",
     "You can apply for loan with help of mine.", "To keep going say Hi to me."]
-
-# Error set
-defualt_missing_data_error = [
-    "Please say hi to me", "I guess you have not entered anything...! "]
-defualt_error = ["I can't do that for you.", "To keep going say hi to me."]
 
 
 def loan_assistant_welcome_msg():
@@ -26,6 +24,7 @@ def loan_assistant_welcome_msg():
                                   separators=(',', ': '), default=json_util.default)
     # welcome_json_obj = json.dumps(welcome_json_obj)
     return welcome_json_obj
+
 
 def start_converation_action(humanmessage):
     START_CONV_KEYWORDS = ("hello", "hi", "Hi", "Hello")
@@ -162,13 +161,14 @@ def borrowers_email_id_asking(emailid):
                                            separators=(',', ': '), default=json_util.default)
     return emailid_conv_json_obj
 
+
 def mobilenumber_asking(mobileno):
     if mobileno.isdigit() and len(mobileno) == 10:
 
         mobilenumber_asking_json_obj = json.dumps({'message_human': mobileno,
                                                    'message_bot': [
                                                        "Can you please tell me how much amount of loan do you need?",
-                                                       ],
+                                                   ],
                                                    'suggestion_message': ['Enter loan amount'],
                                                    'current_form_action': "/mobilenumber_asking?msg=",
                                                    'next_form_action': "/loan_chat?msg=",
@@ -200,7 +200,7 @@ def mobilenumber_asking(mobileno):
     elif mobileno.lower() == "" or mobileno.lower() is None or len(mobileno) == 0:
         mobilenumber_asking_json_obj = json.dumps({'message_human': mobileno,
                                                    'message_bot': "You have not entered borrower's mobile number",
-                                                   'suggestion_message': ["I gusss you have not entered anything...!",
+                                                   'suggestion_message': ["I guess you have not entered anything...!",
                                                                           "Please, provide me borrower's valid 10 digit mobile number without putting 0 or country code before it "],
                                                    'current_form_action': "/mobilenumber_asking?msg=",
                                                    'next_form_action': "",
@@ -230,6 +230,7 @@ def mobilenumber_asking(mobileno):
 
     return mobilenumber_asking_json_obj
 
+
 def loan_ammount_asking(loanammount):
     if loanammount.isdigit():
         loanammount = int(loanammount)
@@ -238,17 +239,17 @@ def loan_ammount_asking(loanammount):
                 {'message_human': loanammount, 'loan_ammount_in_words': num2words(int(loanammount)),
                  'message_bot': ['Ok we are considering the ' + str(
                      loanammount) + " as borrower's loan ammount."],
-                 'suggestion_message': ["Bye"], 'current_form_action': "/loan_chat?msg=",
-                 'next_form_action': "/end_chat?msg=", 'previous_form_action': "/mobilenumber_asking?msg",
-                 'next_field_type': "button",
-                 'previous_field_type': "number", "placeholder_text": ["Bye"]},
+                 'suggestion_message': ["Enter your query"], 'current_form_action': "/loan_chat?msg=",
+                 'next_form_action': "/other_chat?msg=", 'previous_form_action': "/mobilenumber_asking?msg",
+                 'next_field_type': "text",
+                 'previous_field_type': "number", "placeholder_text": ["Enter your query"]},
                 sort_keys=True, indent=4,
                 separators=(',', ': '))
         elif loanammount < 100000:
             loan_ammount_json_obj = json.dumps(
                 {'message_human': loanammount, 'loan_ammount_in_words': num2words(int(loanammount)),
                  'message_bot': ['Sorry but we are doing loans in range of 100000 to 5000000.',
-                                 'We can consider 1000000 ammount of loan for you at first glance.',
+                                 'We can consider 1000000 amount of loan for you at first glance.',
                                  ],
                  'suggestion_message': ["Bye"], 'current_form_action': "/loan_chat?msg=",
                  'next_form_action': "/end_chat?msg=", 'previous_form_action': "/mobilenumber_asking?msg",
@@ -261,12 +262,13 @@ def loan_ammount_asking(loanammount):
             loan_ammount_json_obj = json.dumps({'message_human': loanammount,
                                                 'message_bot': [
                                                     'Sorry but we are doing loans in range of 100000 to 5000000.',
-                                                    'We can consider 50000000 ammount of loan for you at first glance.',
-                                                    ],
+                                                    'We can consider 50000000 amount of loan for you at first glance.',
+                                                ],
                                                 'suggestion_message': ["Bye"],
                                                 'current_form_action': "/loan_chat?msg=",
-                                                'next_form_action': "/end_chat?msg=",
-                                                'previous_form_action': "/mobilenumber_asking?msg", 'next_field_type': "button",
+                                                'next_form_action': "/user_other_query?msg=",
+                                                'previous_form_action': "/mobilenumber_asking?msg",
+                                                'next_field_type': "button",
                                                 'previous_field_type': "number",
                                                 "placeholder_text": ["Bye"]},
                                                sort_keys=True, indent=4,
@@ -280,10 +282,71 @@ def loan_ammount_asking(loanammount):
                                             'next_form_action': "",
                                             'previous_form_action': "/mobilenumber_asking?msg", 'next_field_type': "",
                                             'previous_field_type': "number",
-                                            "placeholder_text": "Please enter the loan ammount in digits between the range of 1000000 and 5000000."},
+                                            "placeholder_text": "Please enter the loan amount in digits between the range of 1000000 and 5000000."},
                                            sort_keys=True, indent=4,
                                            separators=(',', ': '))
     return loan_ammount_json_obj
+
+
+def other_cases(user_other_query):
+    text = user_other_query.lower()
+
+    search_status = re.search(r".*\bstatus\b.*", text.lower(), re.MULTILINE | re.IGNORECASE)
+    search_documents = re.search(r".*\bdocument\b.*|.*\bdocuments\b.*", text.lower(), re.MULTILINE | re.IGNORECASE)
+
+    if text.lower() != "" and search_status:
+        user_other_query_json_obj = json.dumps({'message_human': text,
+                                                'message_bot': [" Your application is underprocess",
+                                                                "It is at risk management team.",
+                                                                "It will take 2 working days."],
+                                                'suggestion_message': ["Enter your query"],
+                                                'current_form_action': "/other_chat?msg",
+                                                'next_form_action': "/end_chat?msg=",
+                                                'previous_form_action': "/loan_chat",
+                                                'next_field_type': "text", 'previous_field_type': "text",
+                                                "placeholder_text": "Enter your query"},
+                                               sort_keys=True, indent=4,
+                                               separators=(',', ': '), default=json_util.default)
+    elif text.lower() != "" and search_documents:
+        user_other_query_json_obj = json.dumps({'message_human': text,
+                                                'message_bot': [" You need to submit following documents.",
+                                                                "1. 3-years ITR",
+                                                                "2. Identity proof.",
+                                                                "3. 3-months Salary sheet",
+                                                                "4. 6-months bank statement",
+                                                                ],
+                                                'suggestion_message': ["Enter your query"],
+                                                'current_form_action': "/other_chat?msg",
+                                                'next_form_action': "/end_chat?msg=",
+                                                'previous_form_action': "/loan_chat",
+                                                'next_field_type': "text", 'previous_field_type': "text",
+                                                "placeholder_text": "Enter your query"},
+                                               sort_keys=True, indent=4,
+                                               separators=(',', ': '), default=json_util.default)
+
+    elif text.lower() == "" or text.lower() is None or len(text) == 0:
+        user_other_query_json_obj = json.dumps({'message_human': text,
+                                                'message_bot': defualt_missing_data_error,
+                                                'suggestion_message': ["Enter your query"],
+                                                'current_form_action': "/other_chat?msg",
+                                                'next_form_action': "", 'previous_form_action': "/loan_chat",
+                                                'next_field_type': "text", 'previous_field_type': "text",
+                                                "placeholder_text": "Enter your query"},
+                                               sort_keys=True, indent=4,
+                                               separators=(',', ': '), default=json_util.default)
+    else:
+        user_other_query_json_obj = json.dumps({'message_human': text,
+                                                'message_bot': defualt_error,
+                                                'suggestion_message': ["Enter your query"],
+                                                'current_form_action': "/other_chat?msg",
+                                                'next_form_action': "", 'previous_form_action': "/loan_chat",
+                                                'next_field_type': "text", 'previous_field_type': "text",
+                                                "placeholder_text": "Enter your query"
+                                                },
+                                               sort_keys=True, indent=4,
+                                               separators=(',', ': '), default=json_util.default)
+    return user_other_query_json_obj
+
 
 def user_bye_str(userbye):
     USER_BYE_KEYWORDS = (
